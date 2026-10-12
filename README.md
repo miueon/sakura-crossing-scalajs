@@ -4,13 +4,13 @@
 
 A procedural anime-NPR 3D Japanese railway crossing and neighborhood built in **Scala 3.8**, **Scala.js 1.22**, **Laminar 17**, **Ultraviolet** (typed Scala 3 → GLSL shader DSL), and **Three.js r185** — with **zero external 3D model or texture assets** and **zero hand-written JavaScript facade boilerplate**.
 
-> **Early Flagship Showcase for _Facade Contract_ (Coming Soon)**
+> **Early Preview Showcase for _Facade Contract_ (Work in Progress)**
 >
-> This repository is an early real-world showcase of **Facade Contract**, our upcoming next-generation TypeScript-to-Scala.js binding toolchain.
+> This repository serves as a real-world proving ground for **Facade Contract**, an upcoming TypeScript-to-Scala 3 facade tool we are currently building.
 >
-> From a single two-line shim ([`src/main/shims/vendor/three.ts`](src/main/shims/vendor/three.ts)) containing `export * from "three";`, **Facade Contract** synthesized and contract-verified all **1,042 Scala 3 facade files** committed under [`src/main/scala-generated/vendor/three/`](src/main/scala-generated/vendor/three/).
+> From a two-line shim ([`src/main/shims/vendor/three.ts`](src/main/shims/vendor/three.ts)) containing `export * from "three";`, **Facade Contract** generated the **1,042 Scala 3 facade files** under [`src/main/scala-generated/vendor/three/`](src/main/scala-generated/vendor/three/).
 >
-> **Facade Contract** is currently in pre-release development and will be open-sourced soon — stay tuned!
+> We are still polishing the toolchain and plan to share it with the community soon!
 
 ---
 
@@ -24,24 +24,23 @@ A procedural anime-NPR 3D Japanese railway crossing and neighborhood built in **
 
 ---
 
-## Why _Facade Contract_ Instead of ScalablyTyped?
+## How Does _Facade Contract_ Relate to ScalablyTyped?
 
-Anyone who has used **ScalablyTyped** on modern TypeScript libraries (`three`, `@ai-sdk/*`, modern UI kits) knows the friction:
+[**ScalablyTyped**](https://scalablytyped.org/) has been a cornerstone of the Scala.js ecosystem for years, making an enormous range of JavaScript libraries usable across Scala 2 and Scala 3.
 
-1. **Transitive Universe Explosion**: Pointing ScalablyTyped at a single npm package drags in a massive transitive `@types/*` graph (including its own parallel `typings.std` / DOM universe), generating tens of thousands of files, bloating sbt compile times, and bringing IDE indexing (Metals) to its knees.
-2. **Mangled, Unidiomatic Output**: Syntactic AST translation produces deeply nested `Anon_*` bags, builder boilerplate, and erased workarounds that feel nothing like modern Scala 3.
-3. **Blind Translation vs. Verified Contracts**: Complex TypeScript type relations (`keyof`, indexed access, conditional and mapped types, overloaded constructors) frequently degrade to `js.Any` or emit signatures that compile in Scala but subtly diverge from what the upstream TypeScript checker actually permits.
-4. **All-or-Nothing Lock-in**: You either accept the entire generated `typings.*` monolith or fall back to writing `@js.native` traits by hand.
+With **Facade Contract**, we wanted to explore a complementary, **Scala-3-first design point** focused on a few specific ergonomics we kept wishing for in day-to-day application work:
 
-| Dimension | Hand-Written `@js.native` | ScalablyTyped | **Facade Contract (Previewed Here)** |
+1. **Direct `scalajs-dom` Integration (No Parallel DOM Universe)**: When pairing Three.js with **Laminar**, we want `renderer.domElement` and `CanvasTexture` to work directly with `org.scalajs.dom.HTMLCanvasElement` out of the box, rather than bridging between `scalajs-dom` and a separate generated `typings.std` DOM hierarchy.
+2. **Smooth Continuum Between `export *` and Surgical Curation**: You can start with a two-line `export * from "three"` shim for zero-config whole-package coverage, and if you ever want to narrow or customize a specific API for your domain, you can refine it right inside that same `.ts` shim file without dropping down to raw `@js.native` traits.
+3. **Contract-Checked Against TypeScript**: Rather than treating code generation as a one-way syntax translation, Facade Contract checks the emitted Scala 3 surface back against TypeScript's type system so complex modern TS constructs stay aligned with upstream semantics.
+4. **Source-First, Readable Scala 3 Output**: It emits flat, idiomatic Scala 3 `.scala` files (`vendor.three.*`, native `A | B` unions, lightweight footprint for Metals/IDE indexing) that you can inspect directly in [`src/main/scala-generated/vendor/three/`](src/main/scala-generated/vendor/three/).
+
+| Aspect | Hand-Written `@js.native` | ScalablyTyped | **Facade Contract (Explored Here)** |
 | :--- | :--- | :--- | :--- |
-| **Authoring Effort** | Thousands of lines of manual traits | Config + transitive `@types` wrestling | **2 lines (`export * from "three"`)** or surgical curation |
-| **Correctness Guarantee** | Unchecked (human guesswork) | Best-effort syntactic AST translation | **Contract-verified against upstream TypeScript semantics** |
-| **Scala 3 Output Quality** | Clean, but incomplete & drifts | Mangled `Anon_*` & parallel `typings.std` | **Flat, idiomatic Scala 3.8 (`vendor.three.*`, native unions)** |
-| **DOM & Stdlib Interop** | Direct `scalajs-dom` | Parallel generated DOM types | **Direct `scalajs-dom` & standard Scala.js types** |
-| **Build & IDE Footprint** | Fast, but manual | Heavy JVM heap & slow indexing | **Bounded closure (1,042 readable `.scala` files)** |
-
-Browse [`src/main/scala-generated/vendor/three/`](src/main/scala-generated/vendor/three/) in this repo to see the difference first-hand: clean, human-readable Scala 3 classes and traits that integrate directly with `scalajs-dom` and compile out of the box.
+| **Sweet Spot** | Tiny APIs with 1–2 entry points | Full transitive `@types/*` ecosystem | **Scala 3 apps wanting clean, contract-checked package facades** |
+| **Authoring Flow** | Manual Scala traits | `build.sbt` dependency plugin | **TypeScript surface shim (`export *` by default, optional curation)** |
+| **DOM Interop** | Native `scalajs-dom` | Generated `typings.std` | **Native `scalajs-dom` & standard Scala.js types** |
+| **Output Artifact** | Hand-maintained `.scala` files | Published local Ivy jars | **Readable Scala 3 sources (`vendor.three.*`)** |
 
 ---
 
@@ -56,7 +55,7 @@ const _pkg = Scala.package("vendor.three", { module: "three" });
 export * from "three";
 ```
 
-Nothing in `three` was hand-written for this project. Every `WebGLRenderer`, `WebGLRenderTarget`, `DepthTexture`, `MeshToonMaterial`, `DataTexture`, `InstancedMesh`, `BufferGeometry`, `DirectionalLight`, `Matrix4`, and `Quaternion` used across the 28 Scala world and rendering modules comes directly from the generated Scala 3 sources in [`src/main/scala-generated/vendor/three/`](src/main/scala-generated/vendor/three/). Because those generated `.scala` sources are committed in this repository, you can clone and run `sbt fullLinkJS` immediately without needing the pre-release generator installed locally.
+Every `WebGLRenderer`, `WebGLRenderTarget`, `DepthTexture`, `MeshToonMaterial`, `DataTexture`, `InstancedMesh`, `BufferGeometry`, `DirectionalLight`, `Matrix4`, and `Quaternion` used across the 28 Scala world and rendering modules comes directly from the generated Scala 3 sources in [`src/main/scala-generated/vendor/three/`](src/main/scala-generated/vendor/three/). Because those generated `.scala` sources are committed in this repository, you can clone and run `sbt fullLinkJS` immediately without needing the generator installed locally.
 
 ### 2. Typed Scala 3 Shaders via Ultraviolet
 All custom GLSL shaders are authored in Scala 3 using [**Ultraviolet**](https://github.com/PurpleKingdomGames/ultraviolet) and compiled to GLSL at compile time:
