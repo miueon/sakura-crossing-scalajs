@@ -1,0 +1,14 @@
+target/
+project/target/
+project/project/
+build/
+dist/
+node_modules/
+.bsp/
+.metals/
+.bloop/
+.scala-build/
+*.semanticdb
+.facade-contract/
+.shots/
+.DS_Store
